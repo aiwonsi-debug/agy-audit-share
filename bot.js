@@ -1518,13 +1518,22 @@ function handleCommand(chatId, text) {
             res.on('data', chunk => resData += chunk);
             res.on('end', () => {
                 try {
-                    const parsed = JSON.parse(resData);
-                    if (!parsed.choices || !parsed.choices[0] || !parsed.choices[0].message) {
+                    let parsed = null;
+                    let result = null;
+                    try { parsed = JSON.parse(resData); } catch(e){}
+
+                    if (parsed && parsed.choices && parsed.choices[0] && parsed.choices[0].message && parsed.choices[0].message.content) {
+                        try { result = JSON.parse(parsed.choices[0].message.content.trim()); } catch(e){}
+                    }
+
+                    if (!result) {
+                        result = extractStockFromText(text);
+                    }
+
+                    if (!result) {
                         sendMessage(chatId, '❌ [AI Error]: ไม่สามารถสกัดข้อมูลได้');
                         return;
                     }
-
-                    const result = JSON.parse(parsed.choices[0].message.content.trim());
                     const { recordLoadingReport, syncToRender } = require('./webhook_server.js');
                     const lineNotifier = require('./line_notifier.js');
 
